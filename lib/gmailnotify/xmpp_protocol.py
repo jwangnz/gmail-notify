@@ -43,12 +43,18 @@ class GMailNotifierProtocol(XMPPHandler, IQHandlerMixin):
             email_subject = unicode(threadinfo.subject)
             email_snippet = unicode(threadinfo.snippet)
             email_link = threadinfo.getAttribute("url")
+            email_sender_originator = None
+            email_sender_unread = None
+            def parseSender(element):
+                name = sender.getAttribute("name")
+                address = sender.getAttribute("address")
+                return name and "%s <%s>" % (name, address) or address
             for sender in threadinfo.senders.elements():
                 if sender.getAttribute("originator") == "1":
-                    name = sender.getAttribute("name")
-                    address = sender.getAttribute("address")
-                    email_sender = name and "%s <%s>" % (name, address) or address
-                    break
+                    email_sender_originator = parseSender(sender)
+                if sender.getAttribute("unread") == "1":
+                    email_sender_unread = parseSender(sender)
+            email_sender = email_sender_unread or email_sender_originator
             mail = { "subject": email_subject, "sender" : email_sender, "snippet": email_snippet, "link": email_link }
             self.notifyMail(mail)
 
